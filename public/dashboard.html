@@ -1,0 +1,1156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GoalSpark — Goal Tracker Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,600;0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --cream: #FDFAF4;
+    --warm-white: #FFF8EE;
+    --orange: #F06A2B;
+    --orange-light: #FDE8DA;
+    --orange-mid: #F5956B;
+    --green: #2EAF7D;
+    --green-light: #D6F5EB;
+    --blue: #3B82F6;
+    --blue-light: #DBEAFE;
+    --purple: #8B5CF6;
+    --purple-light: #EDE9FE;
+    --red: #EF4444;
+    --red-light: #FEE2E2;
+    --yellow: #F59E0B;
+    --yellow-light: #FEF3C7;
+    --ink: #1A1209;
+    --ink-mid: #4A3F30;
+    --ink-light: #8C7B69;
+    --border: #EAE2D6;
+    --shadow: 0 4px 24px rgba(26,18,9,0.08);
+    --shadow-sm: 0 2px 8px rgba(26,18,9,0.06);
+  }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--cream);
+    color: var(--ink);
+    min-height: 100vh;
+  }
+
+  /* ── HEADER ── */
+  header {
+    background: var(--warm-white);
+    border-bottom: 1.5px solid var(--border);
+    padding: 0 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 64px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .logo {
+    font-family: 'Fraunces', serif;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--orange);
+    letter-spacing: -0.5px;
+  }
+  .logo span { color: var(--ink); }
+  .header-right { display: flex; align-items: center; gap: 1rem; }
+  .streak-badge {
+    background: var(--yellow-light);
+    color: #92400E;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 5px 12px;
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .date-chip {
+    font-size: 13px;
+    color: var(--ink-light);
+    font-weight: 500;
+  }
+  .user-menu {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .user-name {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--ink);
+  }
+  .btn-logout {
+    background: var(--red-light);
+    color: #991B1B;
+    border: none;
+    border-radius: 8px;
+    padding: 6px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .btn-logout:hover { background: var(--red); color: #fff; }
+
+  /* ── LAYOUT ── */
+  .app {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem;
+    display: grid;
+    grid-template-columns: 1fr 340px;
+    gap: 1.5rem;
+  }
+  .main-col { display: flex; flex-direction: column; gap: 1.5rem; }
+  .side-col { display: flex; flex-direction: column; gap: 1.5rem; }
+
+  /* ── CARDS ── */
+  .card {
+    background: #fff;
+    border: 1.5px solid var(--border);
+    border-radius: 16px;
+    padding: 1.5rem;
+    box-shadow: var(--shadow-sm);
+  }
+  .card-title {
+    font-family: 'Fraunces', serif;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--ink);
+    margin-bottom: 1.2rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .card-title .icon {
+    width: 28px; height: 28px;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px;
+  }
+
+  /* ── SUMMARY STATS ── */
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+  }
+  .stat-card {
+    border-radius: 14px;
+    padding: 1.2rem 1rem;
+    text-align: center;
+  }
+  .stat-card.orange { background: var(--orange-light); }
+  .stat-card.green { background: var(--green-light); }
+  .stat-card.purple { background: var(--purple-light); }
+  .stat-num {
+    font-family: 'Fraunces', serif;
+    font-size: 2.2rem;
+    font-weight: 700;
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+  .stat-card.orange .stat-num { color: #C2410C; }
+  .stat-card.green .stat-num { color: #065F46; }
+  .stat-card.purple .stat-num { color: #5B21B6; }
+  .stat-label { font-size: 12px; font-weight: 500; color: var(--ink-mid); }
+
+  /* ── FORM ── */
+  .form-row { display: flex; gap: 10px; flex-wrap: wrap; }
+  .form-group { display: flex; flex-direction: column; gap: 5px; flex: 1; min-width: 140px; }
+  .form-group label { font-size: 12px; font-weight: 600; color: var(--ink-light); text-transform: uppercase; letter-spacing: 0.5px; }
+  .form-group input, .form-group select {
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    padding: 9px 12px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    color: var(--ink);
+    background: var(--cream);
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .form-group input:focus, .form-group select:focus { border-color: var(--orange); }
+  .btn-add {
+    background: var(--orange);
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    padding: 10px 20px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.2s, transform 0.1s;
+    align-self: flex-end;
+  }
+  .btn-add:hover { background: #D9551F; }
+  .btn-add:active { transform: scale(0.97); }
+
+  /* ── GOAL LIST ── */
+  #goals-list { display: flex; flex-direction: column; gap: 10px; }
+  .goal-item {
+    border: 1.5px solid var(--border);
+    border-radius: 14px;
+    padding: 1rem 1.2rem;
+    background: var(--warm-white);
+    transition: box-shadow 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+  .goal-item:hover { box-shadow: var(--shadow); }
+  .goal-item.done { opacity: 0.65; }
+  .goal-item.done .goal-name { text-decoration: line-through; }
+  .goal-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
+  .goal-left { display: flex; align-items: flex-start; gap: 10px; }
+  .cat-dot {
+    width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; margin-top: 5px;
+  }
+  .goal-name { font-weight: 600; font-size: 15px; color: var(--ink); }
+  .goal-meta { font-size: 12px; color: var(--ink-light); margin-top: 2px; }
+  .goal-actions { display: flex; gap: 6px; }
+  .btn-icon {
+    width: 30px; height: 30px; border-radius: 8px;
+    border: 1.5px solid var(--border);
+    background: #fff;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px;
+    transition: background 0.15s, border-color 0.15s;
+  }
+  .btn-icon:hover { background: var(--orange-light); border-color: var(--orange-mid); }
+  .btn-icon.delete:hover { background: var(--red-light); border-color: var(--red); }
+  .progress-wrap { display: flex; align-items: center; gap: 10px; }
+  .progress-bar-bg {
+    flex: 1; height: 7px; border-radius: 10px; background: var(--border); overflow: hidden;
+  }
+  .progress-bar-fill {
+    height: 100%; border-radius: 10px;
+    transition: width 0.4s ease;
+  }
+  .progress-pct { font-size: 12px; font-weight: 600; color: var(--ink-mid); min-width: 34px; text-align: right; }
+  .progress-controls { display: flex; gap: 6px; margin-top: 8px; align-items: center; }
+  .progress-controls input[type=range] {
+    flex: 1; accent-color: var(--orange); cursor: pointer;
+  }
+  .deadline-badge {
+    display: inline-flex; align-items: center; gap: 3px;
+    font-size: 11px; font-weight: 600;
+    padding: 2px 8px; border-radius: 10px;
+    margin-top: 4px;
+  }
+  .deadline-ok { background: var(--green-light); color: #065F46; }
+  .deadline-soon { background: var(--yellow-light); color: #92400E; }
+  .deadline-late { background: var(--red-light); color: #991B1B; }
+  .empty-state {
+    text-align: center; padding: 2.5rem 1rem;
+    color: var(--ink-light); font-size: 15px;
+  }
+  .empty-state .big { font-size: 2.5rem; margin-bottom: 8px; }
+
+  /* ── HEALTH BAR ── */
+  .health-bar-wrap {
+    display: flex; align-items: center; gap: 10px; margin-bottom: 1.2rem;
+    background: linear-gradient(135deg, #FFE8D6 0%, #FFF0E6 100%);
+    padding: 0.8rem 1rem; border-radius: 12px;
+    border: 1.5px solid #F5C9AF;
+  }
+  .health-label { font-size: 11px; font-weight: 700; color: #9A3412; text-transform: uppercase; letter-spacing: 0.5px; }
+  .health-bar-bg {
+    flex: 1; height: 12px; border-radius: 10px;
+    background: #EAE2D6; overflow: hidden;
+  }
+  .health-bar-fill {
+    height: 100%; border-radius: 10px;
+    background: linear-gradient(90deg, #F06A2B 0%, #F5956B 100%);
+    transition: width 0.3s ease;
+  }
+  .health-pct { font-size: 12px; font-weight: 700; color: #9A3412; min-width: 35px; text-align: right; }
+
+  /* ── PRIORITY BADGE ── */
+  .priority-badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-size: 11px; font-weight: 700;
+    padding: 3px 10px; border-radius: 8px;
+    text-transform: uppercase; letter-spacing: 0.4px;
+  }
+  .priority-high { background: var(--red-light); color: #991B1B; }
+  .priority-medium { background: var(--yellow-light); color: #92400E; }
+  .priority-low { background: var(--green-light); color: #065F46; }
+
+  /* ── BATTLE MODE ── */
+  .battle-arena {
+    background: linear-gradient(135deg, #2D1B4E 0%, #1A0E2E 100%);
+    border-radius: 18px; padding: 2rem; color: #fff;
+    text-align: center;
+  }
+  .battle-title {
+    font-family: 'Fraunces', serif;
+    font-size: 1.8rem; font-weight: 700;
+    color: #FFD700; margin-bottom: 1rem;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+  }
+  .battle-card {
+    background: rgba(255,255,255,0.1); border: 2px solid #FFD700;
+    border-radius: 14px; padding: 1.2rem; margin-bottom: 1rem;
+    backdrop-filter: blur(10px);
+  }
+  .battle-task-name { font-size: 1.1rem; font-weight: 600; margin-bottom: 0.5rem; }
+  .battle-task-category { font-size: 12px; color: #FFD700; margin-bottom: 0.8rem; }
+  .battle-reward { font-size: 1.3rem; font-weight: 700; color: #FFD700; margin-bottom: 1rem; }
+  .battle-buttons { display: flex; gap: 10px; margin-top: 1.2rem; justify-content: center; }
+  .btn-battle-win {
+    background: linear-gradient(135deg, #2EAF7D 0%, #1e8449 100%);
+    color: #fff; border: none; border-radius: 10px;
+    padding: 12px 24px; font-weight: 700; font-size: 14px;
+    cursor: pointer; transition: transform 0.2s;
+  }
+  .btn-battle-win:hover { transform: scale(1.05); }
+  .btn-battle-lose {
+    background: rgba(255,255,255,0.2); color: #fff;
+    border: 2px solid #FFD700; border-radius: 10px;
+    padding: 10px 20px; font-weight: 600; font-size: 14px;
+    cursor: pointer; transition: background 0.2s;
+  }
+  .btn-battle-lose:hover { background: rgba(255,255,255,0.3); }
+  .battle-info {
+    background: rgba(255,255,255,0.05); padding: 1rem;
+    border-radius: 12px; margin-top: 1rem; font-size: 13px;
+    color: #CCC; border-left: 4px solid #FFD700;
+  }
+  .stars-earned {
+    font-size: 2.5rem; letter-spacing: 5px;
+    animation: starBounce 0.6s ease;
+  }
+  @keyframes starBounce {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.2); }
+  }
+
+  /* ── MODAL ── */
+  .modal-bg {
+    position: fixed; inset: 0; background: rgba(26,18,9,0.35);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 1000; opacity: 0; pointer-events: none; transition: opacity 0.2s;
+  }
+  .modal-bg.open { opacity: 1; pointer-events: all; }
+  .modal {
+    background: #fff; border-radius: 18px; padding: 2rem; width: 420px; max-width: 90vw;
+    box-shadow: 0 20px 60px rgba(26,18,9,0.18); transform: translateY(20px); transition: transform 0.25s;
+  }
+  .modal-bg.open .modal { transform: translateY(0); }
+  .modal-title { font-family: 'Fraunces', serif; font-size: 1.2rem; font-weight: 700; margin-bottom: 1.2rem; }
+  .modal-actions { display: flex; gap: 10px; margin-top: 1.2rem; justify-content: flex-end; }
+  .btn-cancel {
+    background: none; border: 1.5px solid var(--border); border-radius: 10px;
+    padding: 9px 18px; font-family: 'DM Sans', sans-serif; font-size: 14px;
+    cursor: pointer; transition: background 0.15s;
+  }
+  .btn-cancel:hover { background: var(--cream); }
+
+  /* ── CATEGORIES LEGEND ── */
+  .cat-legend { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 0.6rem; }
+  .cat-chip {
+    display: flex; align-items: center; gap: 5px;
+    font-size: 12px; font-weight: 500; color: var(--ink-mid);
+    background: var(--cream); border: 1.5px solid var(--border);
+    border-radius: 20px; padding: 3px 10px;
+    cursor: pointer; transition: background 0.15s;
+  }
+  .cat-chip.active { border-color: var(--orange); background: var(--orange-light); color: #9A3412; }
+  .cat-chip .dot { width: 8px; height: 8px; border-radius: 50%; }
+
+  /* ── CHART ── */
+  .chart-wrap { position: relative; height: 200px; }
+
+  /* ── STREAK CALENDAR ── */
+  .streak-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+  .streak-day {
+    aspect-ratio: 1; border-radius: 5px;
+    background: var(--border); font-size: 9px;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--ink-light); font-weight: 500;
+  }
+  .streak-day.active { background: var(--orange); color: #fff; }
+  .streak-day.today { box-shadow: 0 0 0 2px var(--orange); }
+  .streak-label { font-size: 11px; color: var(--ink-light); margin-bottom: 6px; font-weight: 500; }
+
+  /* ── QUOTE ── */
+  .quote-card {
+    background: linear-gradient(135deg, #FFF0E6 0%, #FDE8DA 100%);
+    border: 1.5px solid #F5C9AF;
+    border-radius: 16px;
+    padding: 1.5rem;
+  }
+  .quote-text {
+    font-family: 'Fraunces', serif;
+    font-size: 1.05rem;
+    font-style: italic;
+    color: var(--ink);
+    line-height: 1.6;
+    margin-bottom: 0.6rem;
+  }
+  .quote-author { font-size: 12px; font-weight: 600; color: var(--orange); }
+  .btn-refresh {
+    margin-top: 0.8rem;
+    background: #fff;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    padding: 6px 14px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--ink-mid);
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .btn-refresh:hover { background: var(--orange-light); }
+
+  @media (max-width: 768px) {
+    .app { grid-template-columns: 1fr; }
+    .stats-row { grid-template-columns: repeat(3, 1fr); }
+    .form-row { flex-direction: column; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">Goal<span>Spark</span> ✦</div>
+  <div class="header-right">
+    <div style="display:flex; align-items:center; gap:12px; min-width:250px;">
+      <div style="text-align:right;">
+        <div style="font-size:11px; font-weight:700; color:var(--orange); text-transform:uppercase;">Player Health</div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div class="health-bar-bg" style="width:120px; height:8px;">
+            <div class="health-bar-fill" id="header-health-bar" style="width:100%"></div>
+          </div>
+          <span id="header-health-pct" style="font-weight:700; font-size:13px; color:var(--orange); min-width:30px;">100%</span>
+        </div>
+      </div>
+    </div>
+    <div class="streak-badge">🔥 <span id="header-streak">0</span> day streak</div>
+    <div class="date-chip" id="today-date"></div>
+    <div class="user-menu">
+      <span class="user-name" id="user-name"></span>
+      <button class="btn-logout" onclick="logout()">Logout</button>
+    </div>
+  </div>
+</header>
+
+<div class="app">
+  <!-- MAIN COLUMN -->
+  <div class="main-col">
+
+    <!-- STATS -->
+    <div class="stats-row">
+      <div class="stat-card orange">
+        <div class="stat-num" id="stat-total">0</div>
+        <div class="stat-label">Total Goals</div>
+      </div>
+      <div class="stat-card green">
+        <div class="stat-num" id="stat-done">0</div>
+        <div class="stat-label">Completed</div>
+      </div>
+      <div class="stat-card purple">
+        <div class="stat-num" id="stat-stars">0</div>
+        <div class="stat-label">Total Stars</div>
+      </div>
+    </div>
+
+    <!-- ADD GOAL -->
+    <div class="card">
+      <div class="card-title">
+        <span class="icon" style="background:#FDE8DA;">🎯</span>
+        Add New Goal
+      </div>
+      <div class="form-row" id="add-form">
+        <div class="form-group" style="flex:2; min-width:200px;">
+          <label>Goal Name</label>
+          <input type="text" id="goal-name" placeholder="e.g. Read 12 books this year" />
+        </div>
+        <div class="form-group">
+          <label>Category</label>
+          <select id="goal-cat">
+            <option value="health">💪 Health</option>
+            <option value="learning">📚 Learning</option>
+            <option value="career">💼 Career</option>
+            <option value="personal">🌟 Personal</option>
+            <option value="finance">💰 Finance</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Priority</label>
+          <select id="goal-priority">
+            <option value="low">🟢 Low</option>
+            <option value="medium">🟡 Medium</option>
+            <option value="high">🔴 High</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Deadline</label>
+          <input type="date" id="goal-deadline" />
+        </div>
+        <button class="btn-add" onclick="addGoal()">+ Add Goal</button>
+      </div>
+    </div>
+
+    <!-- FILTER BY CATEGORY -->
+    <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+      <span style="font-size:12px; font-weight:600; color:var(--ink-light);">Filter:</span>
+      <div class="cat-legend">
+        <div class="cat-chip active" data-cat="all" onclick="setFilter('all', this)">
+          <span class="dot" style="background:var(--ink-light)"></span> All
+        </div>
+        <div class="cat-chip" data-cat="health" onclick="setFilter('health', this)">
+          <span class="dot" style="background:#F06A2B"></span> Health
+        </div>
+        <div class="cat-chip" data-cat="learning" onclick="setFilter('learning', this)">
+          <span class="dot" style="background:#3B82F6"></span> Learning
+        </div>
+        <div class="cat-chip" data-cat="career" onclick="setFilter('career', this)">
+          <span class="dot" style="background:#8B5CF6"></span> Career
+        </div>
+        <div class="cat-chip" data-cat="personal" onclick="setFilter('personal', this)">
+          <span class="dot" style="background:#2EAF7D"></span> Personal
+        </div>
+        <div class="cat-chip" data-cat="finance" onclick="setFilter('finance', this)">
+          <span class="dot" style="background:#F59E0B"></span> Finance
+        </div>
+      </div>
+    </div>
+
+    <!-- GOALS LIST -->
+    <div class="card">
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1.2rem;">
+        <div class="card-title" style="margin-bottom:0;">
+          <span class="icon" style="background:#DBEAFE;">📋</span>
+          My Goals
+        </div>
+        <button class="btn-add" onclick="openBattleMode()" title="Enter Battle Mode" style="padding:8px 16px; font-size:13px;">⚔️ Battle Mode</button>
+      </div>
+      <div id="goals-list">
+        <div class="empty-state">
+          <div class="big">🎯</div>
+          No goals yet — add your first goal above!
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- SIDE COLUMN -->
+  <div class="side-col">
+
+    <!-- HEALTH BAR -->
+    <div class="card">
+      <div class="health-bar-wrap">
+        <div class="health-label">Your Health</div>
+        <div class="health-bar-bg">
+          <div class="health-bar-fill" id="side-health-bar" style="width:100%"></div>
+        </div>
+        <div class="health-pct" id="side-health-pct">100%</div>
+      </div>
+      <div style="text-align:center; font-size:13px; color:var(--ink-mid);">
+        <p>Complete goals to restore health! Win battles & lose in health duels.</p>
+      </div>
+    </div>
+
+    <!-- STREAK TRACKER -->
+    <div class="card">
+      <div class="card-title">
+        <span class="icon" style="background:#FEF3C7;">🔥</span>
+        Activity Streak
+      </div>
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+        <div>
+          <div style="font-family:'Fraunces',serif; font-size:2rem; font-weight:700; color:var(--orange);" id="streak-count">0</div>
+          <div style="font-size:12px; color:var(--ink-light); margin-top:2px;">days active</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:13px; font-weight:600; color:var(--ink-mid);" id="streak-best">Best: 0 days</div>
+          <div style="font-size:12px; color:var(--ink-light);">Last 21 days</div>
+        </div>
+      </div>
+      <div class="streak-label">SUN · MON · TUE · WED · THU · FRI · SAT</div>
+      <div class="streak-grid" id="streak-grid"></div>
+    </div>
+
+    <!-- PROGRESS CHART -->
+    <div class="card">
+      <div class="card-title">
+        <span class="icon" style="background:#EDE9FE;">📊</span>
+        Progress Chart
+      </div>
+      <div class="chart-wrap">
+        <canvas id="progressChart"></canvas>
+      </div>
+      <div style="font-size:12px; color:var(--ink-light); text-align:center; margin-top:8px;">Goal completion by category</div>
+    </div>
+
+    <!-- QUICK TIPS -->
+    <div class="card" style="background: #F0FDF7; border-color: #A7F3D0;">
+      <div class="card-title" style="color:#065F46;">
+        <span class="icon" style="background:#D1FAE5;">💡</span>
+        Tips for Success
+      </div>
+      <ul style="list-style:none; display:flex; flex-direction:column; gap:8px;">
+        <li style="font-size:13px; color:#064E3B; display:flex; gap:6px;"><span>⚔️</span> Battle mode gives 20-25% progress boost</li>
+        <li style="font-size:13px; color:#064E3B; display:flex; gap:6px;"><span>⭐</span> Earn more stars with high priority goals</li>
+        <li style="font-size:13px; color:#064E3B; display:flex; gap:6px;"><span>❤️</span> Maintain 100% health for best performance</li>
+        <li style="font-size:13px; color:#064E3B; display:flex; gap:6px;"><span>🔥</span> Keep your streak alive for motivation</li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+<!-- EDIT MODAL -->
+<div class="modal-bg" id="edit-modal">
+  <div class="modal">
+    <div class="modal-title">✏️ Edit Goal</div>
+    <div style="display:flex; flex-direction:column; gap:12px;">
+      <div class="form-group">
+        <label>Goal Name</label>
+        <input type="text" id="edit-name" />
+      </div>
+      <div class="form-group">
+        <label>Category</label>
+        <select id="edit-cat">
+          <option value="health">💪 Health</option>
+          <option value="learning">📚 Learning</option>
+          <option value="career">💼 Career</option>
+          <option value="personal">🌟 Personal</option>
+          <option value="finance">💰 Finance</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Priority</label>
+        <select id="edit-priority">
+          <option value="low">🟢 Low</option>
+          <option value="medium">🟡 Medium</option>
+          <option value="high">🔴 High</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Deadline</label>
+        <input type="date" id="edit-deadline" />
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+      <button class="btn-add" onclick="saveEdit()">Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<!-- BATTLE MODE MODAL -->
+<div class="modal-bg" id="battle-modal">
+  <div class="modal" style="width:520px; padding:0; background:transparent; box-shadow:none;">
+    <div style="position:absolute; top:15px; right:15px;">
+      <button class="btn-icon" onclick="closeBattleMode()" style="background:#fff; width:36px; height:36px;">✕</button>
+    </div>
+    <div class="battle-arena">
+      <div class="battle-title">⚔️ BATTLE MODE ⚔️</div>
+      <div id="battle-content">
+        <div style="padding:2rem; color:#CCC;">Loading battle...</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const API_URL = 'http://localhost:5000/api';
+const token = localStorage.getItem('token');
+
+if (!token) {
+  window.location.href = '/index.html';
+}
+
+const CAT_COLORS = {
+  health:   '#F06A2B',
+  learning: '#3B82F6',
+  career:   '#8B5CF6',
+  personal: '#2EAF7D',
+  finance:  '#F59E0B',
+};
+
+let goals = [];
+let playerHealth = 100;
+let totalStars = 0;
+let filterCat = 'all';
+let editingId = null;
+let chart = null;
+let battleGoalId = null;
+
+async function init() {
+  const user = JSON.parse(localStorage.getItem('user'));
+  document.getElementById('user-name').textContent = user.username;
+  document.getElementById('today-date').textContent = new Date().toLocaleDateString('en-US', { weekday:'short', month:'short', day:'numeric' });
+  
+  const today = todayStr();
+  const minDate = document.getElementById('goal-deadline');
+  if (minDate) minDate.min = today;
+  
+  await loadGoals();
+  await loadStats();
+  renderAll();
+}
+
+function todayStr() {
+  return new Date().toISOString().split('T')[0];
+}
+
+async function loadGoals() {
+  try {
+    const res = await fetch(`${API_URL}/goals`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    const data = await res.json();
+    if (data.success) {
+      goals = data.data;
+    }
+  } catch (error) {
+    console.error('Error loading goals:', error);
+  }
+}
+
+async function loadStats() {
+  try {
+    const res = await fetch(`${API_URL}/goals/stats/summary`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    const data = await res.json();
+    if (data.success) {
+      playerHealth = data.data.playerHealth;
+      totalStars = data.data.totalStars;
+    }
+  } catch (error) {
+    console.error('Error loading stats:', error);
+  }
+}
+
+async function addGoal() {
+  const name = document.getElementById('goal-name').value.trim();
+  if (!name) { shakeEl('goal-name'); return; }
+  
+  const category = document.getElementById('goal-cat').value;
+  const priority = document.getElementById('goal-priority').value;
+  const deadline = document.getElementById('goal-deadline').value;
+  
+  try {
+    const res = await fetch(`${API_URL}/goals`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ name, category, priority, deadline })
+    });
+    const data = await res.json();
+    if (data.success) {
+      goals.unshift(data.data);
+      document.getElementById('goal-name').value = '';
+      document.getElementById('goal-deadline').value = '';
+      document.getElementById('goal-priority').value = 'low';
+      renderAll();
+    }
+  } catch (error) {
+    console.error('Error adding goal:', error);
+  }
+}
+
+async function deleteGoal(id) {
+  if (!confirm('Delete this goal?')) return;
+  try {
+    const res = await fetch(`${API_URL}/goals/${id}`, {
+      method: 'DELETE',
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    const data = await res.json();
+    if (data.success) {
+      goals = goals.filter(g => g._id !== id);
+      renderAll();
+    }
+  } catch (error) {
+    console.error('Error deleting goal:', error);
+  }
+}
+
+async function toggleDone(id) {
+  const g = goals.find(g => g._id === id);
+  if (!g) return;
+  try {
+    const res = await fetch(`${API_URL}/goals/${id}`, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ done: !g.done, progress: !g.done ? 100 : g.progress })
+    });
+    const data = await res.json();
+    if (data.success) {
+      const idx = goals.findIndex(g => g._id === id);
+      if (idx !== -1) goals[idx] = data.data;
+      renderAll();
+    }
+  } catch (error) {
+    console.error('Error updating goal:', error);
+  }
+}
+
+async function updateProgress(id, val) {
+  try {
+    const res = await fetch(`${API_URL}/goals/${id}`, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ progress: parseInt(val), done: parseInt(val) === 100 })
+    });
+    const data = await res.json();
+    if (data.success) {
+      const idx = goals.findIndex(g => g._id === id);
+      if (idx !== -1) goals[idx] = data.data;
+      renderAll();
+    }
+  } catch (error) {
+    console.error('Error updating progress:', error);
+  }
+}
+
+function openEdit(id) {
+  const g = goals.find(g => g._id === id);
+  if (!g) return;
+  editingId = id;
+  document.getElementById('edit-name').value = g.name;
+  document.getElementById('edit-cat').value = g.category;
+  document.getElementById('edit-priority').value = g.priority || 'low';
+  document.getElementById('edit-deadline').value = g.deadline ? g.deadline.split('T')[0] : '';
+  document.getElementById('edit-modal').classList.add('open');
+}
+
+function closeModal() {
+  document.getElementById('edit-modal').classList.remove('open');
+  editingId = null;
+}
+
+async function saveEdit() {
+  const g = goals.find(g => g._id === editingId);
+  if (!g) return;
+  try {
+    const res = await fetch(`${API_URL}/goals/${editingId}`, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        name: document.getElementById('edit-name').value.trim() || g.name,
+        category: document.getElementById('edit-cat').value,
+        priority: document.getElementById('edit-priority').value,
+        deadline: document.getElementById('edit-deadline').value
+      })
+    });
+    const data = await res.json();
+    if (data.success) {
+      const idx = goals.findIndex(g => g._id === editingId);
+      if (idx !== -1) goals[idx] = data.data;
+      closeModal();
+      renderAll();
+    }
+  } catch (error) {
+    console.error('Error saving goal:', error);
+  }
+}
+
+document.getElementById('edit-modal')?.addEventListener('click', function(e) {
+  if (e.target === this) closeModal();
+});
+
+function setFilter(cat, el) {
+  filterCat = cat;
+  document.querySelectorAll('.cat-chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  renderGoals();
+}
+
+function renderAll() {
+  renderStats();
+  renderGoals();
+  renderHealth();
+  renderChart();
+}
+
+function renderStats() {
+  const total = goals.length;
+  const done = goals.filter(g => g.done).length;
+  
+  document.getElementById('stat-total').textContent = total;
+  document.getElementById('stat-done').textContent = done;
+  document.getElementById('stat-stars').textContent = totalStars;
+}
+
+function renderHealth() {
+  const healthPct = Math.max(0, playerHealth);
+  document.getElementById('header-health-bar').style.width = healthPct + '%';
+  document.getElementById('header-health-pct').textContent = Math.round(healthPct) + '%';
+  document.getElementById('side-health-bar').style.width = healthPct + '%';
+  document.getElementById('side-health-pct').textContent = Math.round(healthPct) + '%';
+}
+
+function renderGoals() {
+  const list = document.getElementById('goals-list');
+  let filtered = filterCat === 'all' ? goals : goals.filter(g => g.category === filterCat);
+  if (!filtered.length) {
+    list.innerHTML = `<div class="empty-state"><div class="big">🎯</div>${filterCat === 'all' ? 'No goals yet — add your first goal above!' : 'No goals in this category yet.'}</div>`;
+    return;
+  }
+  list.innerHTML = filtered.map(g => goalHTML(g)).join('');
+}
+
+function goalHTML(g) {
+  const color = CAT_COLORS[g.category] || '#888';
+  const catEmoji = {health:'💪',learning:'📚',career:'💼',personal:'🌟',finance:'💰'}[g.category] || '🎯';
+  const priorityEmoji = {high:'🔴',medium:'🟡',low:'🟢'}[g.priority || 'low'];
+  let deadlineBadge = '';
+  if (g.deadline) {
+    const today = new Date(); today.setHours(0,0,0,0);
+    const dl = new Date(g.deadline);
+    dl.setHours(0,0,0,0);
+    const diff = Math.ceil((dl - today) / 86400000);
+    if (diff < 0 && !g.done) deadlineBadge = `<div class="deadline-badge deadline-late">⚠ Overdue by ${Math.abs(diff)}d</div>`;
+    else if (diff <= 3 && !g.done) deadlineBadge = `<div class="deadline-badge deadline-soon">⏰ ${diff}d left</div>`;
+    else if (!g.done) deadlineBadge = `<div class="deadline-badge deadline-ok">📅 ${diff}d left</div>`;
+    else deadlineBadge = `<div class="deadline-badge deadline-ok">✓ Completed</div>`;
+  }
+  const barColor = g.progress === 100 ? '#2EAF7D' : g.progress >= 50 ? '#3B82F6' : '#F06A2B';
+  return `
+  <div class="goal-item ${g.done ? 'done' : ''}" id="goal-${g._id}">
+    <div class="goal-header">
+      <div class="goal-left">
+        <div class="cat-dot" style="background:${color}"></div>
+        <div>
+          <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
+            <div class="goal-name">${escHtml(g.name)}</div>
+            <span class="priority-badge priority-${g.priority || 'low'}">${priorityEmoji} ${(g.priority || 'low').toUpperCase()}</span>
+          </div>
+          <div class="goal-meta">${catEmoji} ${g.category.charAt(0).toUpperCase()+g.category.slice(1)} ${g.deadline ? '· Due ' + formatDate(g.deadline) : ''}</div>
+          ${deadlineBadge}
+        </div>
+      </div>
+      <div class="goal-actions">
+        ${!g.done ? `<button class="btn-icon" onclick="openBattleForGoal('${g._id}')" title="Battle Mode" style="color:#FFD700;">⚔️</button>` : ''}
+        <button class="btn-icon" onclick="toggleDone('${g._id}')" title="${g.done ? 'Mark incomplete' : 'Mark complete'}">
+          ${g.done ? '↩' : '✓'}
+        </button>
+        <button class="btn-icon" onclick="openEdit('${g._id}')" title="Edit">✏️</button>
+        <button class="btn-icon delete" onclick="deleteGoal('${g._id}')" title="Delete">🗑</button>
+      </div>
+    </div>
+    <div class="progress-wrap">
+      <div class="progress-bar-bg">
+        <div class="progress-bar-fill" style="width:${g.progress}%; background:${barColor}"></div>
+      </div>
+      <div class="progress-pct">${g.progress}%</div>
+    </div>
+    <div class="progress-controls">
+      <span style="font-size:11px; color:var(--ink-light); font-weight:600;">Progress:</span>
+      <input type="range" min="0" max="100" step="5" value="${g.progress}"
+        oninput="updateProgress('${g._id}', this.value)" style="flex:1; accent-color:${barColor};">
+    </div>
+  </div>`;
+}
+
+function formatDate(str) {
+  if (!str) return '';
+  const d = new Date(str);
+  return d.toLocaleDateString('en-US', { month:'short', day:'numeric' });
+}
+
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function renderChart() {
+  const cats = ['health','learning','career','personal','finance'];
+  const labels = ['Health','Learning','Career','Personal','Finance'];
+  const data = cats.map(cat => {
+    const cGoals = goals.filter(g => g.category === cat);
+    return cGoals.length ? Math.round(cGoals.reduce((a,g)=>a+g.progress,0)/cGoals.length) : 0;
+  });
+  const colors = cats.map(c => CAT_COLORS[c]);
+  const ctx = document.getElementById('progressChart')?.getContext('2d');
+  if (!ctx) return;
+  if (chart) chart.destroy();
+  chart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        data,
+        backgroundColor: colors.map(c => c + '33'),
+        borderColor: colors,
+        borderWidth: 2,
+        borderRadius: 8,
+        borderSkipped: false,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        y: {
+          min: 0, max: 100,
+          ticks: { callback: v => v + '%', font: { size: 11 }, color: '#8C7B69' },
+          grid: { color: '#EAE2D6' },
+          border: { display: false }
+        },
+        x: {
+          ticks: { font: { size: 11 }, color: '#8C7B69' },
+          grid: { display: false },
+          border: { display: false }
+        }
+      }
+    }
+  });
+}
+
+function openBattleMode() {
+  const incompleteGoals = goals.filter(g => !g.done && g.progress < 100);
+  if (incompleteGoals.length === 0) {
+    alert('No goals to battle! Complete all your goals first.');
+    return;
+  }
+  const randomGoal = incompleteGoals[Math.floor(Math.random() * incompleteGoals.length)];
+  openBattleForGoal(randomGoal._id);
+}
+
+function openBattleForGoal(goalId) {
+  const g = goals.find(g => g._id === goalId);
+  if (!g || g.done) return;
+  battleGoalId = goalId;
+  const priorityReward = {high: 5, medium: 3, low: 1}[g.priority || 'low'];
+  const content = document.getElementById('battle-content');
+  content.innerHTML = `
+    <div class="battle-card">
+      <div class="battle-task-name">BATTLE: ${escHtml(g.name)}</div>
+      <div class="battle-task-category">${g.category.toUpperCase()} • Priority: ${(g.priority || 'low').toUpperCase()}</div>
+      <div class="battle-reward">Reward: ${priorityReward} ⭐ + 20❤️ HP</div>
+      <div class="battle-info">
+        ⚔️ You face a mighty challenge! Will you complete this task and claim victory?
+      </div>
+      <div class="battle-buttons">
+        <button class="btn-battle-win" onclick="battleWin()">⚔️ COMPLETE TASK</button>
+        <button class="btn-battle-lose" onclick="battleLose()">Retreat</button>
+      </div>
+    </div>
+  `;
+  document.getElementById('battle-modal').classList.add('open');
+}
+
+function battleWin() {
+  const g = goals.find(g => g._id === battleGoalId);
+  if (!g) return;
+  const priorityReward = {high: 5, medium: 3, low: 1}[g.priority || 'low'];
+  const content = document.getElementById('battle-content');
+  content.innerHTML = `
+    <div style="padding:1rem 0;">
+      <div class="stars-earned">${'⭐'.repeat(priorityReward)}</div>
+      <div style="font-size:1.5rem; font-weight:700; margin-top:1rem; color:#FFD700;">VICTORY!</div>
+      <div style="margin-top:1rem; color:#CCC; font-size:14px;">You have conquered this quest!</div>
+      <div style="margin-top:1.5rem; font-size:2rem; font-weight:700; color:#2EAF7D;">+20❤️ HP RESTORED</div>
+      <button class="btn-battle-win" onclick="confirmBattleWin()" style="margin-top:1.5rem;">Claim Reward</button>
+    </div>
+  `;
+}
+
+function battleLose() {
+  const content = document.getElementById('battle-content');
+  content.innerHTML = `
+    <div style="padding:1rem 0;">
+      <div style="font-size:2.5rem; margin-bottom:1rem;">😔</div>
+      <div style="font-size:1.5rem; font-weight:700; margin-top:1rem; color:#FFB6C1;">Retreat...</div>
+      <div style="margin-top:1rem; color:#CCC; font-size:14px;">The quest remains unfinished. Your health fades...</div>
+      <div style="margin-top:1.5rem; font-size:2rem; font-weight:700; color:#EF4444;">-10❤️ HP LOST</div>
+      <button class="btn-battle-lose" onclick="confirmBattleLose()" style="margin-top:1.5rem;">Accept Defeat</button>
+    </div>
+  `;
+}
+
+async function confirmBattleWin() {
+  try {
+    const res = await fetch(`${API_URL}/goals/${battleGoalId}/battle-win`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    const data = await res.json();
+    if (data.success) {
+      playerHealth = data.data.playerHealth;
+      totalStars = data.data.totalStars;
+      const idx = goals.findIndex(g => g._id === battleGoalId);
+      if (idx !== -1) goals[idx] = data.data.goal;
+      closeBattleMode();
+      renderAll();
+    }
+  } catch (error) {
+    console.error('Error in battle win:', error);
+  }
+}
+
+async function confirmBattleLose() {
+  try {
+    const res = await fetch(`${API_URL}/goals/${battleGoalId}/battle-lose`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    const data = await res.json();
+    if (data.success) {
+      playerHealth = data.data.playerHealth;
+      closeBattleMode();
+      renderAll();
+    }
+  } catch (error) {
+    console.error('Error in battle lose:', error);
+  }
+}
+
+function closeBattleMode() {
+  document.getElementById('battle-modal').classList.remove('open');
+  battleGoalId = null;
+}
+
+document.getElementById('battle-modal')?.addEventListener('click', function(e) {
+  if (e.target === this) closeBattleMode();
+});
+
+function shakeEl(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.style.borderColor = 'var(--red)';
+  setTimeout(() => el.style.borderColor = '', 1000);
+}
+
+function logout() {
+  localStorage.removeItem('token');
+  localStorage.removeItem('user');
+  window.location.href = '/index.html';
+}
+
+init();
+</script>
+
+</body>
+</html>
