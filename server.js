@@ -11,7 +11,18 @@ const goalRoutes = require('./routes/goals');
 const app = express();
 
 // Middleware
-app.use(helmet());
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'","'unsafe-inline'"],
+      scriptSrcAttr:["'unsafe-inline'"],
+      styleSrc: ["'self'","'unsafe-inline'","https://fonts.googleapis.com"],
+      fontSrc: ["'self'","https://fonts.gststic.com"],
+      connectSrc:["'self'","https://goal-tracker-3-8ko0.onrender.com"],
+    }
+  }
+}));
 app.use(cors());
 app.use(express.json());
 app.use(express.static('public'));
