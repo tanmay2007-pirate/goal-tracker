@@ -707,12 +707,6 @@ async function init() {
     renderAll();
   }, 100);
 }
-  
-  // Small delay to ensure DOM is ready for Chart.js
-  setTimeout(() => {
-    renderAll();
-  }, 100);
-}
 
 function todayStr() {
   return new Date().toISOString().split('T')[0];
