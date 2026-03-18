@@ -33,6 +33,7 @@ router.post('/', auth, async (req, res) => {
       deadline: deadline ? new Date(deadline) : null
     });
 
+    await updateStreak(req.userId);
     res.status(201).json({ success: true, data: goal });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -115,8 +116,12 @@ router.post('/:id/battle-win', auth, async (req, res) => {
     user.playerHealth = Math.min(100, user.playerHealth + 20);
     user.totalStars += priorityStars;
     
-    await user.save();
+    await User.findByIdAndUpdate(req.userId, {
+      playerHealth: user.playerHealth,
+      totalStars: user.totalStars
+    });
     goal = await goal.save();
+    await updateStreak(req.userId);
 
     res.status(200).json({
       success: true,
@@ -131,17 +136,51 @@ router.post('/:id/battle-win', auth, async (req, res) => {
 router.post('/:id/battle-lose', auth, async (req, res) => {
   try {
     const user = await User.findById(req.userId);
-    user.playerHealth = Math.max(0, user.playerHealth - 10);
-    await user.save();
+    const newHealth = Math.max(0, user.playerHealth - 10);
+    await User.findByIdAndUpdate(req.userId, {
+      playerHealth: newHealth
+    });
 
     res.status(200).json({
       success: true,
-      data: { playerHealth: user.playerHealth }
+      data: { playerHealth: newHealth }
     });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
 });
+
+// Get stats
+// Helper to update streak
+async function updateStreak(userId) {
+  const user = await User.findById(userId);
+  const today = new Date().toISOString().split('T')[0];
+  
+  if (!user.streak.days.includes(today)) {
+    user.streak.days.push(today);
+    
+    // Check if yesterday was active for consecutive streak
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yesterdayStr = yesterday.toISOString().split('T')[0];
+    
+    if (user.streak.days.includes(yesterdayStr)) {
+      user.streak.current += 1;
+    } else {
+      user.streak.current = 1;
+    }
+    
+    if (user.streak.current > user.streak.best) {
+      user.streak.best = user.streak.current;
+    }
+    
+    await User.findByIdAndUpdate(userId, {
+      'streak.days': user.streak.days,
+      'streak.current': user.streak.current,
+      'streak.best': user.streak.best
+    });
+  }
+}
 
 // Get stats
 router.get('/stats/summary', auth, async (req, res) => {

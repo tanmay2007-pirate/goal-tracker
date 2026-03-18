@@ -731,9 +731,14 @@ async function loadStats() {
     });
     const data = await res.json();
     if (data.success) {
-      playerHealth = data.data.playerHealth;
-      totalStars = data.data.totalStars;
-    }
+  playerHealth = data.data.playerHealth;
+  totalStars = data.data.totalStars;
+  const user = JSON.parse(localStorage.getItem('user'));
+  if (user) {
+    user.streak = data.data.streak;
+    localStorage.setItem('user', JSON.stringify(user));
+  }
+}
   } catch (error) {
     console.error('Error loading stats:', error);
   }
@@ -891,6 +896,36 @@ function renderAll() {
   renderGoals();
   renderHealth();
   renderChart();
+  renderStreak();
+}
+
+function renderStreak() {
+  const user = JSON.parse(localStorage.getItem('user'));
+  const streakDays = user?.streak?.days || [];
+  const currentStreak = user?.streak?.current || 0;
+  const bestStreak = user?.streak?.best || 0;
+
+  document.getElementById('streak-count').textContent = currentStreak;
+  document.getElementById('header-streak').textContent = currentStreak;
+  document.getElementById('streak-best').textContent = 'Best: ' + bestStreak + ' days';
+
+  const grid = document.getElementById('streak-grid');
+  if (!grid) return;
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  let html = '';
+
+  for (let i = 20; i >= 0; i--) {
+    const d = new Date(today);
+    d.setDate(today.getDate() - i);
+    const dateStr = d.toISOString().split('T')[0];
+    const isActive = streakDays.includes(dateStr);
+    const isToday = i === 0;
+    html += `<div class="streak-day ${isActive ? 'active' : ''} ${isToday ? 'today' : ''}">${d.getDate()}</div>`;
+  }
+
+  grid.innerHTML = html;
 }
 
 function renderStats() {
