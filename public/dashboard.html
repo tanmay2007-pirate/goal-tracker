@@ -703,7 +703,15 @@ async function init() {
   
   await loadGoals();
   await loadStats();
-  renderAll();
+  setTimeout(() => {
+    renderAll();
+  }, 100);
+}
+  
+  // Small delay to ensure DOM is ready for Chart.js
+  setTimeout(() => {
+    renderAll();
+  }, 100);
 }
 
 function todayStr() {
